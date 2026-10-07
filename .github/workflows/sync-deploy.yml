@@ -80,6 +80,12 @@ jobs:
       - name: Inject SPA fallback (history 路由刷新 404 修复)
         run: node .github/postbuild-spa.mjs
 
+      - name: Create Pages project if missing (幂等)
+        run: pnpm dlx wrangler@4 pages project create xyzw-web-helper --production-branch main || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: "70a675d7fbea9e50893da24894ba4f02"
+
       - name: Deploy to Cloudflare Pages
         run: pnpm dlx wrangler@4 pages deploy dist --project-name xyzw-web-helper --commit-dirty=true
         env:
