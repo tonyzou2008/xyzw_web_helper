@@ -1,9 +1,7 @@
 name = "xyzw-web-helper"
 compatibility_date = "2023-12-01"
-main = "worker.js"
 
-# Cloudflare Workers 静态资源：dist 作为静态站点，worker.js 处理 /api/* 代理
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
+# Cloudflare Pages 部署形态：
+# - 不再用 Workers 的 main + [assets]（那会让 Pages 构建报错 / 且 _worker.js 被当静态资源拒绝上传）
+# - dist/_worker.js 由 vite 的 copy-worker 插件自动生成，Pages 检测到后自动启用 Advanced Mode 跑 /api/* 登录代理
+pages_build_output_dir = "dist"
