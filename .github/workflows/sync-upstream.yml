@@ -29,16 +29,29 @@ jobs:
         run: |
           git remote add upstream https://github.com/w1249178256/xyzw_web_helper.git || git remote set-url upstream https://github.com/w1249178256/xyzw_web_helper.git
           git fetch upstream main
-          # 备份本 fork 特有的 Cloudflare 部署配置（不能被官方旧版覆盖）
-          cp wrangler.toml /tmp/wrangler.toml.ours
-          # 合并上游代码；冲突时以本 fork 为准（本 fork 只改了部署配置）
-          git merge upstream/main --no-edit -X ours || true
-          # 强制恢复本 fork 的部署配置
-          cp /tmp/wrangler.toml.ours wrangler.toml
+
+          # 优先快进；若有本地改动则普通合并，冲突时以本 fork 的部署配置为准（-X ours）
+          MERGED=0
+          git merge upstream/main --ff-only || MERGED=1
+          if [ "$MERGED" = "1" ]; then
+            if ! git merge upstream/main --no-edit -X ours; then
+              # 极端情况（如上游删除 / 重写文件）导致冲突：除部署配置外一律取上游
+              git checkout --theirs -- . || true
+              git add -A || true
+            fi
+          fi
+
+          # 固定部署配置：wrangler.toml 必须保持 Pages 形态，防止被上游旧写法覆盖
+          cat > wrangler.toml <<'EOF'
+          name = "xyzw-web-helper"
+          compatibility_date = "2023-12-01"
+          pages_build_output_dir = "dist"
+          EOF
+
           git add -A
           if git diff --cached --quiet; then
-            echo "无更新，无需提交"
+            echo "无需提交（已是最新）"
           else
-            git commit -m "chore: sync upstream, keep fork Cloudflare deploy config [skip ci]"
+            git commit -m "chore(sync): 固定 Cloudflare Pages 部署配置"
             git push origin main
           fi
