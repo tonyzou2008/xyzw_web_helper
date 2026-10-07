@@ -29,6 +29,16 @@ jobs:
         run: |
           git remote add upstream https://github.com/w1249178256/xyzw_web_helper.git || git remote set-url upstream https://github.com/w1249178256/xyzw_web_helper.git
           git fetch upstream main
-          # 优先快进；官方更新时本 fork 仅有 sync Action 文件，不会冲突
-          git merge upstream/main --ff-only || git merge upstream/main --no-edit
-          git push origin main
+          # 备份本 fork 特有的 Cloudflare 部署配置（不能被官方旧版覆盖）
+          cp wrangler.toml /tmp/wrangler.toml.ours
+          # 合并上游代码；冲突时以本 fork 为准（本 fork 只改了部署配置）
+          git merge upstream/main --no-edit -X ours || true
+          # 强制恢复本 fork 的部署配置
+          cp /tmp/wrangler.toml.ours wrangler.toml
+          git add -A
+          if git diff --cached --quiet; then
+            echo "无更新，无需提交"
+          else
+            git commit -m "chore: sync upstream, keep fork Cloudflare deploy config [skip ci]"
+            git push origin main
+          fi
