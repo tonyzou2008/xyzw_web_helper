@@ -1,0 +1,34 @@
+name: Sync upstream
+
+# 每天北京时间 02:00（UTC 18:00）自动把官方仓库 main 的更新合并进本 fork
+# 也可在 GitHub Actions 页面手动 "Run workflow" 立即同步
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "sync-bot"
+          git config user.email "bot@users.noreply.github.com"
+
+      - name: Sync with upstream (w1249178256/xyzw_web_helper)
+        run: |
+          git remote add upstream https://github.com/w1249178256/xyzw_web_helper.git || git remote set-url upstream https://github.com/w1249178256/xyzw_web_helper.git
+          git fetch upstream main
+          # 优先快进；官方更新时本 fork 仅有 sync Action 文件，不会冲突
+          git merge upstream/main --ff-only || git merge upstream/main --no-edit
+          git push origin main
