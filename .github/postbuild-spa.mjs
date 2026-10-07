@@ -10,7 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const MARK = "/* [postbuild-spa] */";
+const MARK = "[postbuild-spa]";
 const target = path.resolve(process.cwd(), "dist/_worker.js");
 
 if (!fs.existsSync(target)) {
