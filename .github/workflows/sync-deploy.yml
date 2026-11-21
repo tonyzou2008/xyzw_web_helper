@@ -81,23 +81,10 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: "70a675d7fbea9e50893da24894ba4f02"
         run: |
           echo "=== accounts ==="
-          curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts" | head -c 4000
+          curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts" | head -c 4000
           echo
-          echo "=== projects raw ==="
-          curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects" | head -c 3000
-          echo
-          echo "=== pages domains for each account project ==="
-          for acc in $(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts" | python3 -c "import sys,json;d=json.load(sys.stdin);[print(a['id']) for a in d.get('result',[])]"); do
-            echo "-- account $acc"
-            curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/$acc/pages/projects" \
-              | python3 -c "import sys,json;
-d=json.load(sys.stdin)
-for p in (d.get('result') or []):
-    print('  ',p.get('name'),'|',p.get('subdomain'),'|',p.get('domains'))" 2>/dev/null || true
-          done
+          echo "=== projects ==="
+          curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects" | head -c 4000
 
       - name: Pin h5 manifest version (防上游覆盖)
         run: |
