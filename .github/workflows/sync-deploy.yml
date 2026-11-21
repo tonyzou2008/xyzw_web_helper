@@ -74,6 +74,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 防上游覆盖：即使同步把 main.2a00e.js 覆盖回旧版本，构建前强制重钉
+      - name: Pin h5 manifest version (防上游覆盖)
+        run: |
+          sed -i 's/version=0\.32\.0-android/version=0.1.0-androidh5/g' public/game/main.2a00e.js || true
+          if grep -q "0.1.0-androidh5" public/game/main.2a00e.js; then
+            echo "OK: h5 manifest version pinned"
+          else
+            echo "::warning::未找到 0.1.0-androidh5，请检查上游是否改了 manifest 版本"
+          fi
+
       - name: Build
         run: pnpm build
 
