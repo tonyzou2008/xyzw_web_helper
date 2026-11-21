@@ -75,24 +75,29 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # 防上游覆盖：即使同步把 main.2a00e.js 覆盖回旧版本，构建前强制重钉
-      - name: DIAG cf pages api
+      - name: DIAG cf accounts
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "70a675d7fbea9e50893da24894ba4f02"
         run: |
-          echo "=== projects ==="
+          echo "=== accounts ==="
           curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects?per_page=20" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); [print(p['name'],'|',p.get('subdomain'),'|',p.get('domains')) for p in d.get('result',[])]" || true
-          echo "=== domains ==="
-          curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/xyzw-web-helper/domains" \
-            | head -c 1500 || true
+            "https://api.cloudflare.com/client/v4/accounts" | head -c 4000
           echo
-          echo "=== deployments ==="
+          echo "=== projects raw ==="
           curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/xyzw-web-helper/deployments?per_page=5" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); [print(x.get('short_id'),x.get('environment'),x.get('url'),x.get('created_on'),x.get('latest_stage',{}).get('status')) for x in d.get('result',[])]" || true
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects" | head -c 3000
+          echo
+          echo "=== pages domains for each account project ==="
+          for acc in $(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts" | python3 -c "import sys,json;d=json.load(sys.stdin);[print(a['id']) for a in d.get('result',[])]"); do
+            echo "-- account $acc"
+            curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$acc/pages/projects" \
+              | python3 -c "import sys,json;
+d=json.load(sys.stdin)
+for p in (d.get('result') or []):
+    print('  ',p.get('name'),'|',p.get('subdomain'),'|',p.get('domains'))" 2>/dev/null || true
+          done
 
       - name: Pin h5 manifest version (防上游覆盖)
         run: |
