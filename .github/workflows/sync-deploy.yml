@@ -76,6 +76,9 @@ jobs:
 
       # 防上游覆盖：即使同步把 main.2a00e.js 覆盖回旧版本，构建前强制重钉
       - name: DIAG cf pages api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: "70a675d7fbea9e50893da24894ba4f02"
         run: |
           echo "=== projects ==="
           curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
